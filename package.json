@@ -7,7 +7,8 @@
     "prettier": "prettier --check --ignore-path=.gitignore .",
     "prebuild": "rm --force *.js *.d.ts",
     "build": "tsc",
-    "test": "npm run prettier && npm run build && node index.spec.js"
+    "test": "npm run prettier && npm run build && node index.spec.js",
+    "prepublishOnly": "npm test"
   },
   "keywords": [
     "testId",
@@ -33,7 +34,6 @@
   ],
   "homepage": "https://github.com/uid11/create-test-id#readme",
   "packageManager": "npm@8",
-  "prepublishOnly": "npm test",
   "repository": "github:/uid11/create-test-id",
   "sideEffects": false,
   "types": "index.d.ts"
