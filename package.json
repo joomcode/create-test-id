@@ -1,6 +1,6 @@
 {
   "name": "create-test-id",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Creates typed testId for autotests",
   "exports": "./index.js",
   "scripts": {
