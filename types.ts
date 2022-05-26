@@ -2,7 +2,6 @@
  * Return true if types are exactly equal and false otherwise.
  * IsEqual<{foo: string}, {foo: string}> = true.
  * IsEqual<{readonly foo: string}, {foo: string}> = false.
- * @internal
  */
 export type IsEqual<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2
   ? true
