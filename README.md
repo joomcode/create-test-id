@@ -1,6 +1,7 @@
 # create-test-id
 
 [![NPM version][npm-image]][npm-url]
+[![dependencies: none][dependencies-none-image]][dependencies-none-url]
 [![code style: prettier][prettier-image]][prettier-url]
 [![TypeScript][typescript-image]][typescript-url]
 [![Conventional Commits][conventional-commits-image]][conventional-commits-url]
@@ -49,9 +50,11 @@ In TypeScript module `App.tsx` with root component `App`:
 import {labelTestId} from 'components/Label';
 
 export const appTestId = createTestId<{label: typeof labelTestId; header: unknown}>({
-  eraseTestIdToEmptyString: false,
+  setTestIdToEmptyString: false,
   prefix: 'fooWebApp',
 });
+
+appTestId.label = labelTestId;
 ```
 
 ## License
@@ -60,6 +63,8 @@ export const appTestId = createTestId<{label: typeof labelTestId; header: unknow
 
 [conventional-commits-image]: https://img.shields.io/badge/Conventional_Commits-1.0.0-yellow.svg 'The Conventional Commits specification'
 [conventional-commits-url]: https://www.conventionalcommits.org/en/v1.0.0/
+[dependencies-none-image]: https://img.shields.io/badge/dependencies-none-success.svg 'No dependencies'
+[dependencies-none-url]: https://github.com/uid11/create-test-id/blob/main/package.json
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg 'The MIT License'
 [license-url]: LICENSE
 [npm-image]: https://img.shields.io/npm/v/create-test-id.svg 'create-test-id'
