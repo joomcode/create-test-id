@@ -2,10 +2,11 @@
   "name": "create-test-id",
   "version": "0.0.2",
   "description": "Creates typed testId for autotests",
-  "main": "index.js",
+  "exports": "./index.js",
   "scripts": {
-    "build": "tsc",
     "prettier": "prettier --check --ignore-path=.gitignore .",
+    "prebuild": "rm --force *.js *.d.ts",
+    "build": "tsc",
     "test": "npm run prettier && npm run build && node index.spec.js"
   },
   "keywords": [
@@ -26,7 +27,9 @@
     "node": ">=16"
   },
   "files": [
-    "index.d.ts"
+    "index.js",
+    "index.d.ts",
+    "types.d.ts"
   ],
   "homepage": "https://github.com/uid11/create-test-id#readme",
   "packageManager": "npm@8",

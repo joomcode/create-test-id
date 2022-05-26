@@ -1,6 +1,13 @@
-import type {CreateTestId, Exports} from './types';
+import type {CreateTestId, Exports, RootOptions, TestId} from './types';
 
-export const createTestId: CreateTestId = () => {};
+/**
+ * Create testId by shape.
+ */
+export const createTestId: CreateTestId = <T>(rootOptions?: RootOptions): TestId<T> => {
+  void rootOptions;
+
+  return {} as TestId<T>;
+};
 
 export default createTestId;
 

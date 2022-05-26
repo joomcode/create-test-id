@@ -27,7 +27,7 @@ import {createTestId} from 'create-test-id';
 
 import {inputTestId} from 'components/Input';
 
-export const labelTestId = <{input: typeof inputTestId, text: unknown}>createTestId();
+export const labelTestId = createTestId<{input: typeof inputTestId; text: unknown}>();
 
 labelTestId.input = inputTestId;
 
@@ -48,9 +48,10 @@ In TypeScript module `App.tsx` with root component `App`:
 ```tsx
 import {labelTestId} from 'components/Label';
 
-export const appTestId = <{label: typeof labelTestId; header: unknown}>(
-  createTestId({eraseAllTestIdToEmptyString: false, prefix: 'fooWebApp'})
-);
+export const appTestId = createTestId<{label: typeof labelTestId; header: unknown}>({
+  eraseTestIdToEmptyString: false,
+  prefix: 'fooWebApp',
+});
 ```
 
 ## License
