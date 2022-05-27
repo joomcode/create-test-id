@@ -8,11 +8,6 @@ export type IsEqual<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T ex
   : false;
 
 /**
- * Root TestId options.
- */
-export type RootOptions = {setTestIdToEmptyString?: boolean; prefix: string};
-
-/**
  * Generate TestId by shape.
  */
 export type TestId<T> = {
@@ -22,8 +17,7 @@ export type TestId<T> = {
 /**
  * Creates testId as string from path in typed components tree.
  */
-export type CreateTestId = (<T = {}>() => TestId<T>) &
-  (<T = {}>(rootOptions: {setTestIdToEmptyString?: boolean; prefix: string}) => TestId<T>);
+export type CreateTestId = (<T = {}>() => TestId<T>) & (<T = {}>(prefix: string) => TestId<T>);
 
 /**
  * Package exports.
@@ -32,6 +26,7 @@ export type CreateTestId = (<T = {}>() => TestId<T>) &
 export type Exports = CreateTestId & {
   default?: CreateTestId;
   createTestId?: CreateTestId;
+  createTestIdForProduction?: CreateTestId;
   __esModule?: true;
 };
 

@@ -32,19 +32,18 @@ void inputTestId.text;
 // @ts-expect-error
 void emptyTestId.text;
 
-void createTestId({prefix: 'foo'});
+void createTestId('foo');
 
-void createTestId({setTestIdToEmptyString: true, prefix: 'foo'});
-void createTestId<{}>({setTestIdToEmptyString: false, prefix: 'foo'});
+void createTestId<{}>('foo');
 
 // @ts-expect-error
 void createTestId({});
 
 // @ts-expect-error
-void createTestId({prefix: 3});
+void createTestId(3);
 
 // @ts-expect-error
-void createTestId({setTestIdToEmptyString: 'true', prefix: 'foo'});
+void createTestId(undefined);
 
 export const userName: string = labelTestId.user.name;
 

@@ -4,10 +4,10 @@
   "description": "Creates typed testId for autotests",
   "exports": "./index.js",
   "scripts": {
-    "prettier": "prettier --check --ignore-path=.gitignore .",
+    "prettier": "prettier --write .",
     "prebuild": "rm --force *.js *.d.ts",
     "build": "tsc",
-    "test": "npm run prettier && npm run build && node index.spec.js",
+    "test": "npm run build && npm run prettier && node index.spec.js",
     "prepublishOnly": "npm test"
   },
   "keywords": [

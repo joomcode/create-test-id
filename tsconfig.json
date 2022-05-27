@@ -20,7 +20,7 @@
     "skipLibCheck": false,
     "strict": true,
     "stripInternal": true,
-    "target": "ES2022",
+    "target": "ES2015",
     "types": []
   },
   "files": ["index.ts", "index.spec.ts", "types.ts", "types.spec.ts"]

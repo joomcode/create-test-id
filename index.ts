@@ -1,9 +1,9 @@
-import type {CreateTestId, Exports, RootOptions, TestId, Target} from './types';
+import type {CreateTestId, Exports, TestId, Target} from './types';
 
 const IS_TEST_ID = Symbol();
 const PARENT = Symbol();
+const PREFIX = Symbol();
 const PROPERTY = Symbol();
-const ROOT = Symbol();
 
 /**
  * Any TestId.
@@ -12,8 +12,8 @@ const ROOT = Symbol();
 type AnyTestId = {
   [IS_TEST_ID]?: true;
   [PARENT]?: TestId<unknown>;
+  [PREFIX]?: string;
   [PROPERTY]?: string;
-  [ROOT]?: RootOptions;
 } & TestId<unknown>;
 
 const get = (target: Target, property: string | symbol, receiver: AnyTestId) => {
@@ -59,30 +59,60 @@ function toString(this: AnyTestId): string {
     testId = parent;
   }
 
-  const rootOptions = testId[ROOT];
+  const prefix = testId[PREFIX];
 
-  if (!rootOptions || rootOptions.setTestIdToEmptyString) {
+  if (prefix === undefined) {
     return '';
   }
 
-  properties.unshift(rootOptions.prefix);
+  properties.unshift(prefix);
 
   return properties.join('.');
 }
 
 const proxyHandler = {get, set};
 
-/**
- * Create testId by shape.
- */
-export const createTestId: CreateTestId = <T>(rootOptions?: RootOptions): TestId<T> => {
-  const target: Target = {toString, [IS_TEST_ID]: true};
+/** Creates testId by typed shape. */
+export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> => {
+  const target: Target = {toJSON: toString, toString, [IS_TEST_ID]: true};
 
-  if (rootOptions) {
-    target[ROOT] = rootOptions;
+  if (prefix !== undefined) {
+    target[PREFIX] = prefix;
   }
 
   return new Proxy(target, proxyHandler) as TestId<T>;
+};
+
+let productionTestId: AnyTestId | undefined;
+
+/** createTestid for production (does not create new objects and always returns an empty string). */
+export const createTestIdForProduction: CreateTestId = <T>(): TestId<T> => {
+  if (productionTestId === undefined) {
+    productionTestId = new Proxy(
+      {
+        toJSON() {
+          return '';
+        },
+        toString() {
+          return '';
+        },
+      },
+      {
+        get(target: Target, property: string | symbol) {
+          if (typeof property === 'symbol' || target[property]) {
+            return target[property as string];
+          }
+
+          return productionTestId;
+        },
+        set() {
+          return true;
+        },
+      },
+    );
+  }
+
+  return productionTestId as TestId<T>;
 };
 
 export default createTestId;
@@ -91,5 +121,6 @@ declare const module: {exports: Exports};
 
 module.exports = createTestId;
 module.exports.createTestId = createTestId;
+module.exports.createTestIdForProduction = createTestIdForProduction;
 module.exports.default = createTestId;
 module.exports.__esModule = true;
