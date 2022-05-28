@@ -27,9 +27,38 @@ const appTestId = createTestId<{main: typeof articleTestId; footer: unknown}>('a
 
 appTestId.main = articleTestId;
 
+assert('main' in appTestId, 'settin a property to testId actually creates a property');
+
+// @ts-expect-error: properties of testId are not optional
+assert(delete appTestId.main, 'testId properties can be deleted');
+
+assert('main' in appTestId, 'property exists in testId after successful deletion');
+
+try {
+  Object.preventExtensions(appTestId.main);
+  throw new Error();
+} catch (error) {
+  assert(error instanceof TypeError, 'testId cannot be made non-extensible');
+}
+
+assert(
+  appTestId.main === articleTestId,
+  'setting a property to testId creates a property with setting value',
+);
+
 assert(
   String(appTestId.main.header.text) === 'app.main.header.text',
   'testId includes prefix and all intermediate properties',
+);
+
+assert(
+  appTestId.main.header.text.toString() === 'app.main.header.text',
+  'testId return correct string by toString()',
+);
+
+assert(
+  appTestId.main.header.text.valueOf() === 'app.main.header.text',
+  'testId return correct string by valueOf()',
 );
 
 assert(
@@ -62,9 +91,19 @@ assert(
   'without setting a child testId all testId in this chain turn into an empty string',
 );
 
+assert(
+  appTestId.main.hasOwnProperty === Object.prototype.hasOwnProperty,
+  'testId has correct inherited properties from object prototype',
+);
+
 const productionAppTestId = createTestIdForProduction<{main: typeof articleTestId}>('app');
 
 productionAppTestId.main = articleTestId;
+
+assert(
+  productionAppTestId.main !== articleTestId,
+  'prototype testId does not set regular testId in properties',
+);
 
 assert(
   productionAppTestId.main.header.text.toString() === '',
@@ -81,27 +120,45 @@ assert(
   'casting production testID to JSON returns the empty string',
 );
 
+assert(`${productionAppTestId.main}` === '', 'production testId is correct in template strings');
+
+assert(
+  productionAppTestId.main.header.valueOf() === '',
+  'production testId return correct string by valueOf()',
+);
+
 assert(
   // @ts-expect-error: different testId have different types
   productionAppTestId.main === productionAppTestId.main.header.text,
   'createTestIdForProduction returns one proxy object for all properties',
 );
 
+assert(
+  'main' in productionAppTestId,
+  'property existence check in production testId does not throw exception',
+);
+
 // @ts-expect-error: properties of testId are not optional
 assert(delete productionAppTestId.main, 'production testId properties can be deleted');
 
 assert(
-  'main' in productionAppTestId === false,
-  'property existence check in production testId does not throw exception',
+  'main' in productionAppTestId,
+  'property exists in production testId after successful deletion',
 );
 
 assert(
-  Object.getOwnPropertyDescriptor(productionAppTestId, 'main') === undefined,
+  Object.getOwnPropertyDescriptor(productionAppTestId, 'main')?.value === productionAppTestId,
   'getting a property descriptor on production testId does not throw an exception',
+);
+
+assert(
+  productionAppTestId.hasOwnProperty === Object.prototype.hasOwnProperty,
+  'production testId has correct inherited properties from object prototype',
 );
 
 try {
   Object.preventExtensions(productionAppTestId.main);
+  throw new Error();
 } catch (error) {
   assert(
     error instanceof TypeError,
@@ -119,6 +176,7 @@ assert(
 
 try {
   Object.defineProperty(productionAppTestId.main, 'unwritable', {configurable: true});
+  throw new Error();
 } catch (error) {
   assert(
     error instanceof TypeError,
@@ -128,6 +186,7 @@ try {
 
 try {
   Object.defineProperty(productionAppTestId.main, 'unconfigurable', {writable: true});
+  throw new Error();
 } catch (error) {
   assert(
     error instanceof TypeError,
@@ -137,12 +196,14 @@ try {
 
 try {
   Object.defineProperty(productionAppTestId.main, 'get', {get() {}});
+  throw new Error();
 } catch (error) {
   assert(error instanceof TypeError, 'getters cannot be defined on production testId');
 }
 
 try {
   Object.defineProperty(productionAppTestId.main, 'set', {set() {}});
+  throw new Error();
 } catch (error) {
   assert(error instanceof TypeError, 'setters cannot be defined on production testId');
 }

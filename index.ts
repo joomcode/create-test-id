@@ -1,9 +1,9 @@
 import type {CreateTestId, Exports, TestId, Target} from './types';
 
-const IS_TEST_ID = Symbol();
-const PARENT = Symbol();
-const PREFIX = Symbol();
-const PROPERTY = Symbol();
+const IS_TEST_ID = Symbol('IS_TEST_ID');
+const PARENT = Symbol('PARENT');
+const PREFIX = Symbol('PREFIX');
+const PROPERTY = Symbol('PROPERTY');
 
 /**
  * Any TestId.
@@ -45,6 +45,8 @@ const set = (target: Target, property: string | symbol, value: AnyTestId, receiv
   value[PARENT] = receiver;
   value[PROPERTY] = property;
 
+  target[property] = value;
+
   return true;
 };
 
@@ -70,13 +72,13 @@ function toString(this: AnyTestId): string {
   return properties.join('.');
 }
 
-const proxyHandler = {get, set};
+const proxyHandler = {deleteProperty: () => true, get, preventExtensions: () => false, set};
 
 /**
  * Creates testId by typed shape.
  */
 export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> => {
-  const target: Target = {toJSON: toString, toString, [IS_TEST_ID]: true};
+  const target: Target = {toJSON: toString, toString, valueOf: toString, [IS_TEST_ID]: true};
 
   if (prefix !== undefined) {
     target[PREFIX] = prefix;
@@ -93,19 +95,20 @@ let productionTestId: AnyTestId | undefined;
 export const createTestIdForProduction: CreateTestId = <T>(): TestId<T> => {
   if (productionTestId === undefined) {
     productionTestId = new Proxy(
-      {toJSON: () => '', toString: () => ''},
+      {toJSON: () => '', toString: () => '', valueOf: () => ''},
       {
         defineProperty(target, property, descriptor) {
           type Unused = typeof target | typeof property | true;
 
           return descriptor.configurable === true && descriptor.writable === (true as Unused);
         },
-        get(target: Target, property, receiver) {
+        deleteProperty: () => true,
+        get(target: Target, property) {
           if (typeof property !== 'symbol' && !target[property]) {
             target[property] = productionTestId;
           }
 
-          return Reflect.get(target, property, receiver);
+          return target[property as string];
         },
         preventExtensions: () => false,
         set: () => true,
