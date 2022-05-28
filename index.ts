@@ -72,7 +72,9 @@ function toString(this: AnyTestId): string {
 
 const proxyHandler = {get, set};
 
-/** Creates testId by typed shape. */
+/**
+ * Creates testId by typed shape.
+ */
 export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> => {
   const target: Target = {toJSON: toString, toString, [IS_TEST_ID]: true};
 
@@ -85,29 +87,28 @@ export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> => {
 
 let productionTestId: AnyTestId | undefined;
 
-/** createTestid for production (does not create new objects and always returns an empty string). */
+/**
+ * createTestid for production (does not create new objects and always returns an empty string).
+ */
 export const createTestIdForProduction: CreateTestId = <T>(): TestId<T> => {
   if (productionTestId === undefined) {
     productionTestId = new Proxy(
+      {toJSON: () => '', toString: () => ''},
       {
-        toJSON() {
-          return '';
+        defineProperty(target, property, descriptor) {
+          type Unused = typeof target | typeof property | true;
+
+          return descriptor.configurable === true && descriptor.writable === (true as Unused);
         },
-        toString() {
-          return '';
-        },
-      },
-      {
-        get(target: Target, property: string | symbol) {
-          if (typeof property === 'symbol' || target[property]) {
-            return target[property as string];
+        get(target: Target, property, receiver) {
+          if (typeof property !== 'symbol' && !target[property]) {
+            target[property] = productionTestId;
           }
 
-          return productionTestId;
+          return Reflect.get(target, property, receiver);
         },
-        set() {
-          return true;
-        },
+        preventExtensions: () => false,
+        set: () => true,
       },
     );
   }

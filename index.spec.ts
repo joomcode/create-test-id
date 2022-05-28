@@ -50,6 +50,18 @@ assert(String(appTestId) === 'app', 'root testId equals prefix');
 
 assert(String(appTestId.footer) === 'app.footer', 'testId includes its own properties');
 
+const articleTestIdWithoutSettingChild = createTestId<{header: typeof headerTestId}>();
+
+assert(
+  String(articleTestIdWithoutSettingChild) === '',
+  'without setting a parent testId turns into an empty string',
+);
+
+assert(
+  String(articleTestIdWithoutSettingChild.header) === '',
+  'without setting a child testId all testId in this chain turn into an empty string',
+);
+
 const productionAppTestId = createTestIdForProduction<{main: typeof articleTestId}>('app');
 
 productionAppTestId.main = articleTestId;
@@ -75,16 +87,64 @@ assert(
   'createTestIdForProduction returns one proxy object for all properties',
 );
 
-const articleTestIdWithoutSettingChild = createTestId<{header: typeof headerTestId}>();
+// @ts-expect-error: properties of testId are not optional
+assert(delete productionAppTestId.main, 'production testId properties can be deleted');
 
 assert(
-  String(articleTestIdWithoutSettingChild) === '',
-  'without setting a parent testId turns into an empty string',
+  'main' in productionAppTestId === false,
+  'property existence check in production testId does not throw exception',
 );
 
 assert(
-  String(articleTestIdWithoutSettingChild.header) === '',
-  'without setting a child testId all testId in this chain turn into an empty string',
+  Object.getOwnPropertyDescriptor(productionAppTestId, 'main') === undefined,
+  'getting a property descriptor on production testId does not throw an exception',
 );
+
+try {
+  Object.preventExtensions(productionAppTestId.main);
+} catch (error) {
+  assert(
+    error instanceof TypeError,
+    'testId from createTestIdForProduction cannot be made non-extensible',
+  );
+}
+
+Object.defineProperty(productionAppTestId.main, 'foo', {configurable: true, writable: true});
+
+assert(
+  // @ts-expect-error: property foo is not in testId types
+  productionAppTestId.main.foo === productionAppTestId,
+  'configurable writable properties can be defined on production testId',
+);
+
+try {
+  Object.defineProperty(productionAppTestId.main, 'unwritable', {configurable: true});
+} catch (error) {
+  assert(
+    error instanceof TypeError,
+    'unwritable properties cannot be defined on production testId',
+  );
+}
+
+try {
+  Object.defineProperty(productionAppTestId.main, 'unconfigurable', {writable: true});
+} catch (error) {
+  assert(
+    error instanceof TypeError,
+    'unconfigurable properties cannot be defined on production testId',
+  );
+}
+
+try {
+  Object.defineProperty(productionAppTestId.main, 'get', {get() {}});
+} catch (error) {
+  assert(error instanceof TypeError, 'getters cannot be defined on production testId');
+}
+
+try {
+  Object.defineProperty(productionAppTestId.main, 'set', {set() {}});
+} catch (error) {
+  assert(error instanceof TypeError, 'setters cannot be defined on production testId');
+}
 
 console.log('[Ok] All tests passed!');

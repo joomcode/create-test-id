@@ -49,12 +49,18 @@ In TypeScript module `App.tsx` with root component `App`:
 ```tsx
 import {labelTestId} from 'components/Label';
 
-export const appTestId = createTestId<{label: typeof labelTestId; header: unknown}>({
-  setTestIdToEmptyString: false,
-  prefix: 'fooWebApp',
-});
+export const appTestId = createTestId<{label: typeof labelTestId; header: unknown}>('fooWebApp');
 
 appTestId.label = labelTestId;
+```
+
+For production you can use `createTestIdForProduction`. This function has the same API as `createTestId`,
+but does not create new objects, and its `testId` is always equal to the empty string.
+
+```tsx
+import {createTestId as createTestIdForDev, createTestIdForProduction} from 'create-test-id';
+
+export const createTestId = __IS_PRODUCTION__ ? createTestIdForProduction : createTestIdForDev;
 ```
 
 ## License
