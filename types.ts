@@ -27,7 +27,6 @@ export type Exports = CreateTestId & {
   default?: CreateTestId;
   createTestId?: CreateTestId;
   createTestIdForProduction?: CreateTestId;
-  __esModule?: true;
 };
 
 /**

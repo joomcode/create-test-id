@@ -24,10 +24,6 @@ type AnyTestId = {
  */
 type Set = (target: Target, property: string | symbol, value: unknown, receiver: AnyTestId) => true;
 
-/**
- * Checks that value is some testId.
- * @internal
- */
 function isTestId(value: unknown): value is AnyTestId {
   return (value as AnyTestId)?.[IS_TEST_ID] === true;
 }
@@ -39,7 +35,7 @@ const set: Set = (target, property, value, receiver) => {
     return true;
   }
 
-  if (property !== 'toString' && isTestId(value)) {
+  if (!(property in Object.prototype) && property !== 'toJSON' && isTestId(value)) {
     value[PARENT] = receiver;
     value[PROPERTY] = property;
 
@@ -49,10 +45,6 @@ const set: Set = (target, property, value, receiver) => {
   return true;
 };
 
-/**
- * testId toString method.
- * @internal
- */
 function toString(this: AnyTestId): string {
   const properties: string[] = [];
   let parent: AnyTestId | undefined;
@@ -96,8 +88,8 @@ const internalCreateTestId: InternalCreateTestId = ({getTestIdInGetter, prefix, 
   };
   let testId: AnyTestId;
 
-  const handler: ProxyHandler<object> = {
-    defineProperty(target: Target, property, descriptor) {
+  const handler: ProxyHandler<Target> = {
+    defineProperty(target, property, descriptor) {
       if (descriptor.configurable !== true || descriptor.writable !== true) {
         return false;
       }
@@ -105,7 +97,7 @@ const internalCreateTestId: InternalCreateTestId = ({getTestIdInGetter, prefix, 
       return set(target, property, descriptor.value, testId);
     },
     deleteProperty: () => true,
-    get(target: Target, property, receiver) {
+    get(target, property, receiver) {
       if (typeof property !== 'symbol' && !target[property]) {
         const testIdInGetter = getTestIdInGetter();
 
@@ -132,10 +124,6 @@ const internalCreateTestId: InternalCreateTestId = ({getTestIdInGetter, prefix, 
 export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> =>
   internalCreateTestId({getTestIdInGetter: createTestId, prefix, set, toString}) as TestId<T>;
 
-/**
- * testId singleton for production.
- * @internal
- */
 let productionTestId: AnyTestId | undefined;
 
 /**
@@ -163,4 +151,4 @@ module.exports = createTestId;
 module.exports.createTestId = createTestId;
 module.exports.createTestIdForProduction = createTestIdForProduction;
 module.exports.default = createTestId;
-module.exports.__esModule = true;
+Object.defineProperty(module.exports, '__esModule', {value: true});

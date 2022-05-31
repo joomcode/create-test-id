@@ -11,7 +11,7 @@ export function assert(value: unknown, message: string): asserts value is true {
 import './createTestId.spec';
 import './createTestIdForProduction.spec';
 
-const commonTests = (createTestId: typeof createTestIdForDev) => {
+const runCommonTests = (createTestId: typeof createTestIdForDev) => {
   console.log(`Run common tests for "${createTestId.name}"`);
 
   assert(typeof createTestId === 'function', 'createTestId imports as a function');
@@ -126,9 +126,23 @@ const commonTests = (createTestId: typeof createTestIdForDev) => {
     !('bar' in appTestId.main),
     'configurable writable property with non-testId value cannot be defined on testId',
   );
+
+  // @ts-expect-error: properties of Object.prototype cannot be setted on testId
+  appTestId.propertyIsEnumerable = articleTestId;
+
+  assert(
+    appTestId.propertyIsEnumerable === Object.prototype.propertyIsEnumerable,
+    'properties of Object.prototype cannot be setted on testId',
+  );
+
+  // @ts-expect-error: no property toJSON on app testId
+  appTestId.toJSON = articleTestId;
+
+  // @ts-expect-error: no property toJSON on app testId
+  assert(typeof appTestId.toJSON === 'function', 'property "toJSON" cannot be setted on testId');
 };
 
-commonTests(createTestIdForDev);
-commonTests(createTestIdForProduction);
+runCommonTests(createTestIdForDev);
+runCommonTests(createTestIdForProduction);
 
 console.log('[Ok] All tests passed!');
