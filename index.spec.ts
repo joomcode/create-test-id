@@ -50,6 +50,11 @@ const runCommonTests = (createTestId: typeof createTestIdForDev) => {
     'getting a property descriptor of unexisting property on testId returns undefined',
   );
 
+  assert(
+    Object.getOwnPropertyNames(appTestId).includes('main'),
+    'testId property is contained in the list of intrinsic properties of the parent testId',
+  );
+
   try {
     Object.preventExtensions(appTestId.main);
 
@@ -58,16 +63,18 @@ const runCommonTests = (createTestId: typeof createTestIdForDev) => {
     assert(error instanceof TypeError, 'testId cannot be made non-extensible');
   }
 
-  const articleTestIdWithoutSettingChild = createTestId<{header: typeof headerTestId}>();
+  void createTestId();
+
+  const articleTestIdWithoutSettingParent = createTestId<{header: typeof headerTestId}>();
 
   assert(
-    String(articleTestIdWithoutSettingChild) === '',
+    String(articleTestIdWithoutSettingParent) === '',
     'without setting a parent testId turns into an empty string',
   );
 
   assert(
-    String(articleTestIdWithoutSettingChild.header) === '',
-    'without setting a child testId all testId in this chain turn into an empty string',
+    String(articleTestIdWithoutSettingParent.header) === '',
+    'without setting a parent in chain testId turns into an empty string',
   );
 
   assert(
@@ -120,10 +127,10 @@ const runCommonTests = (createTestId: typeof createTestIdForDev) => {
 
   assert('foo' in appTestId.main, 'configurable writable property can be defined on testId');
 
-  Object.defineProperty(appTestId.main, 'bar', {configurable: true, value: {}, writable: true});
+  Object.defineProperty(appTestId.main, 'quux', {configurable: true, value: {}, writable: true});
 
   assert(
-    !('bar' in appTestId.main),
+    !('quux' in appTestId.main),
     'configurable writable property with non-testId value cannot be defined on testId',
   );
 

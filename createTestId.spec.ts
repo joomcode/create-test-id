@@ -48,6 +48,18 @@ assert(String(appTestId) === 'app', 'root testId equals prefix');
 
 assert(String(appTestId.footer) === 'app.footer', 'testId includes its own properties');
 
+assert(
+  // @ts-expect-error: different testId have different types
+  appTestId.footer !== appTestId.main,
+  'different branches of testId tree contains different values',
+);
+
+assert(
+  // @ts-expect-error: different testId have different types
+  appTestId.main.header !== appTestId.main.header.text,
+  'testId is not equals to its parent testId',
+);
+
 Object.defineProperty(appTestId.main, 'foo', {
   configurable: true,
   value: headerTestId,

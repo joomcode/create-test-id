@@ -45,10 +45,20 @@ const set: Set = (target, property, value, receiver) => {
   return true;
 };
 
-function toString(this: AnyTestId): string {
+let lastGettedTestId: AnyTestId | undefined;
+let previousLastGettedTestId: AnyTestId | undefined;
+
+const toString = function (this: AnyTestId): string {
   const properties: string[] = [];
   let parent: AnyTestId | undefined;
   let testId = this;
+
+  if (testId === lastGettedTestId) {
+    lastGettedTestId = previousLastGettedTestId;
+    previousLastGettedTestId = undefined;
+  } else if (testId === previousLastGettedTestId) {
+    previousLastGettedTestId = undefined;
+  }
 
   while ((parent = testId[PARENT])) {
     properties.unshift(testId[PROPERTY] as string);
@@ -65,24 +75,32 @@ function toString(this: AnyTestId): string {
   properties.unshift(prefix);
 
   return properties.join('.');
-}
+};
+
+const deleteProperty = () => true;
+const preventExtensions = () => false;
 
 /**
  * Create new testId (dev or production).
  * @internal
  */
-type InternalCreateTestId = (parameters: {
-  getTestIdInGetter: () => AnyTestId;
-  prefix: string | undefined;
-  set: Set;
-  toString: () => string;
-}) => AnyTestId;
+type InternalCreateTestId = (
+  prefix?: string,
+  getTestIdInGetter?: () => AnyTestId,
+  internalSet?: Set,
+  internalToString?: () => string,
+) => AnyTestId;
 
-const internalCreateTestId: InternalCreateTestId = ({getTestIdInGetter, prefix, set, toString}) => {
+const internalCreateTestId: InternalCreateTestId = (
+  prefix,
+  getTestIdInGetter = internalCreateTestId,
+  internalSet = set,
+  internalToString = toString,
+) => {
   const target: Target = {
-    toJSON: toString,
-    toString,
-    valueOf: toString,
+    toJSON: internalToString,
+    toString: internalToString,
+    valueOf: internalToString,
     [IS_TEST_ID]: true,
     [PREFIX]: prefix,
   };
@@ -94,11 +112,11 @@ const internalCreateTestId: InternalCreateTestId = ({getTestIdInGetter, prefix, 
         return false;
       }
 
-      return set(target, property, descriptor.value, testId);
+      return internalSet(target, property, descriptor.value, testId);
     },
-    deleteProperty: () => true,
+    deleteProperty,
     get(target, property, receiver) {
-      if (typeof property !== 'symbol' && !target[property]) {
+      if (typeof property === 'string' && !target[property]) {
         const testIdInGetter = getTestIdInGetter();
 
         testIdInGetter[PARENT] = receiver;
@@ -107,10 +125,20 @@ const internalCreateTestId: InternalCreateTestId = ({getTestIdInGetter, prefix, 
         target[property] = testIdInGetter;
       }
 
-      return target[property as string];
+      const value = target[property as string];
+
+      if (typeof property === 'string' && isTestId(value)) {
+        if (value[PARENT] !== lastGettedTestId) {
+          previousLastGettedTestId = lastGettedTestId;
+        }
+
+        lastGettedTestId = value;
+      }
+
+      return value;
     },
-    preventExtensions: () => false,
-    set,
+    preventExtensions,
+    set: internalSet,
   };
 
   testId = new Proxy(target, handler);
@@ -121,8 +149,18 @@ const internalCreateTestId: InternalCreateTestId = ({getTestIdInGetter, prefix, 
 /**
  * Creates testId by typed shape.
  */
-export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> =>
-  internalCreateTestId({getTestIdInGetter: createTestId, prefix, set, toString}) as TestId<T>;
+export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> => {
+  if (prefix === undefined && lastGettedTestId !== undefined) {
+    const testId = lastGettedTestId as TestId<T>;
+
+    lastGettedTestId = undefined;
+    previousLastGettedTestId = undefined;
+
+    return testId;
+  }
+
+  return internalCreateTestId(prefix) as TestId<T>;
+};
 
 let productionTestId: AnyTestId | undefined;
 
@@ -131,13 +169,13 @@ let productionTestId: AnyTestId | undefined;
  */
 export const createTestIdForProduction: CreateTestId = <T>(): TestId<T> => {
   if (productionTestId === undefined) {
-    productionTestId = internalCreateTestId({
-      getTestIdInGetter: () => productionTestId as AnyTestId,
-      prefix: undefined,
-      set: (target, property, value, receiver) =>
+    productionTestId = internalCreateTestId(
+      undefined,
+      () => productionTestId as AnyTestId,
+      (target, property, value, receiver) =>
         set(target, property, isTestId(value) ? productionTestId : undefined, receiver),
-      toString: () => '',
-    });
+      () => '',
+    );
   }
 
   return productionTestId as TestId<T>;

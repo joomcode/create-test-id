@@ -57,3 +57,20 @@ assert(
   appTestId.main.foo === appTestId,
   'configurable writable property creates correct testId on production testId',
 );
+
+Object.defineProperty(appTestId.main, 'bar', {
+  configurable: true,
+  value: articleTestIdForDev,
+  writable: true,
+});
+
+assert(
+  'bar' in appTestId.main,
+  'configurable writable property with dev testId as value creates testId on production testId',
+);
+
+assert(
+  // @ts-expect-error: property foo is not in testId types
+  appTestId.main.bar === appTestId,
+  'configurable writable property creates production testId on production testId',
+);
