@@ -1,5 +1,7 @@
 import type {CreateTestId, Exports, TestId, Target} from './types';
 
+export type {TestId};
+
 const IS_TEST_ID = Symbol('IS_TEST_ID');
 const PARENT = Symbol('PARENT');
 const PREFIX = Symbol('PREFIX');
@@ -16,40 +18,41 @@ type AnyTestId = {
   [PROPERTY]?: string;
 } & TestId<unknown>;
 
-const get = (target: Target, property: string | symbol, receiver: AnyTestId) => {
-  if (typeof property === 'symbol' || target[property]) {
-    return target[property as string];
-  }
+/**
+ * TestId proxy set-trap handler.
+ * @internal
+ */
+type Set = (target: Target, property: string | symbol, value: unknown, receiver: AnyTestId) => true;
 
-  const testId = createTestId<AnyTestId>();
+/**
+ * Checks that value is some testId.
+ * @internal
+ */
+function isTestId(value: unknown): value is AnyTestId {
+  return (value as AnyTestId)?.[IS_TEST_ID] === true;
+}
 
-  testId[PARENT] = receiver;
-  testId[PROPERTY] = property;
-
-  target[property] = testId;
-
-  return target[property];
-};
-
-const set = (target: Target, property: string | symbol, value: AnyTestId, receiver: AnyTestId) => {
+const set: Set = (target, property, value, receiver) => {
   if (typeof property === 'symbol') {
     target[property as unknown as string] = value;
 
     return true;
   }
 
-  if (property === 'toString' || value?.[IS_TEST_ID] !== true) {
-    return true;
+  if (property !== 'toString' && isTestId(value)) {
+    value[PARENT] = receiver;
+    value[PROPERTY] = property;
+
+    target[property] = value;
   }
-
-  value[PARENT] = receiver;
-  value[PROPERTY] = property;
-
-  target[property] = value;
 
   return true;
 };
 
+/**
+ * testId toString method.
+ * @internal
+ */
 function toString(this: AnyTestId): string {
   const properties: string[] = [];
   let parent: AnyTestId | undefined;
@@ -72,21 +75,67 @@ function toString(this: AnyTestId): string {
   return properties.join('.');
 }
 
-const proxyHandler = {deleteProperty: () => true, get, preventExtensions: () => false, set};
+/**
+ * Create new testId (dev or production).
+ * @internal
+ */
+type InternalCreateTestId = (parameters: {
+  getTestIdInGetter: () => AnyTestId;
+  prefix: string | undefined;
+  set: Set;
+  toString: () => string;
+}) => AnyTestId;
+
+const internalCreateTestId: InternalCreateTestId = ({getTestIdInGetter, prefix, set, toString}) => {
+  const target: Target = {
+    toJSON: toString,
+    toString,
+    valueOf: toString,
+    [IS_TEST_ID]: true,
+    [PREFIX]: prefix,
+  };
+  let testId: AnyTestId;
+
+  const handler: ProxyHandler<object> = {
+    defineProperty(target: Target, property, descriptor) {
+      if (descriptor.configurable !== true || descriptor.writable !== true) {
+        return false;
+      }
+
+      return set(target, property, descriptor.value, testId);
+    },
+    deleteProperty: () => true,
+    get(target: Target, property, receiver) {
+      if (typeof property !== 'symbol' && !target[property]) {
+        const testIdInGetter = getTestIdInGetter();
+
+        testIdInGetter[PARENT] = receiver;
+        testIdInGetter[PROPERTY] = property;
+
+        target[property] = testIdInGetter;
+      }
+
+      return target[property as string];
+    },
+    preventExtensions: () => false,
+    set,
+  };
+
+  testId = new Proxy(target, handler);
+
+  return testId;
+};
 
 /**
  * Creates testId by typed shape.
  */
-export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> => {
-  const target: Target = {toJSON: toString, toString, valueOf: toString, [IS_TEST_ID]: true};
+export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> =>
+  internalCreateTestId({getTestIdInGetter: createTestId, prefix, set, toString}) as TestId<T>;
 
-  if (prefix !== undefined) {
-    target[PREFIX] = prefix;
-  }
-
-  return new Proxy(target, proxyHandler) as TestId<T>;
-};
-
+/**
+ * testId singleton for production.
+ * @internal
+ */
 let productionTestId: AnyTestId | undefined;
 
 /**
@@ -94,26 +143,13 @@ let productionTestId: AnyTestId | undefined;
  */
 export const createTestIdForProduction: CreateTestId = <T>(): TestId<T> => {
   if (productionTestId === undefined) {
-    productionTestId = new Proxy(
-      {toJSON: () => '', toString: () => '', valueOf: () => ''},
-      {
-        defineProperty(target, property, descriptor) {
-          type Unused = typeof target | typeof property | true;
-
-          return descriptor.configurable === true && descriptor.writable === (true as Unused);
-        },
-        deleteProperty: () => true,
-        get(target: Target, property) {
-          if (typeof property !== 'symbol' && !target[property]) {
-            target[property] = productionTestId;
-          }
-
-          return target[property as string];
-        },
-        preventExtensions: () => false,
-        set: () => true,
-      },
-    );
+    productionTestId = internalCreateTestId({
+      getTestIdInGetter: () => productionTestId as AnyTestId,
+      prefix: undefined,
+      set: (target, property, value, receiver) =>
+        set(target, property, isTestId(value) ? productionTestId : undefined, receiver),
+      toString: () => '',
+    });
   }
 
   return productionTestId as TestId<T>;

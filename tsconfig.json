@@ -23,5 +23,12 @@
     "target": "ES2015",
     "types": []
   },
-  "files": ["index.ts", "index.spec.ts", "types.ts", "types.spec.ts"]
+  "files": [
+    "createTestId.spec.ts",
+    "createTestIdForProduction.spec.ts",
+    "index.ts",
+    "index.spec.ts",
+    "types.ts",
+    "types.spec.ts"
+  ]
 }
