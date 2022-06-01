@@ -2,20 +2,20 @@ import type {CreateTestId, Exports, TestId, Target} from './types';
 
 export type {TestId};
 
-const IS_TEST_ID = Symbol('IS_TEST_ID');
 const PARENT = Symbol('PARENT');
 const PREFIX = Symbol('PREFIX');
 const PROPERTY = Symbol('PROPERTY');
+const TARGET = Symbol('TARGET');
 
 /**
  * Any TestId.
  * @internal
  */
 type AnyTestId = {
-  [IS_TEST_ID]?: true;
-  [PARENT]?: TestId<unknown>;
+  [PARENT]?: AnyTestId;
   [PREFIX]?: string;
   [PROPERTY]?: string;
+  [TARGET]: Target;
 } & TestId<unknown>;
 
 /**
@@ -25,7 +25,7 @@ type AnyTestId = {
 type Set = (target: Target, property: string | symbol, value: unknown, receiver: AnyTestId) => true;
 
 function isTestId(value: unknown): value is AnyTestId {
-  return (value as AnyTestId)?.[IS_TEST_ID] === true;
+  return (value as AnyTestId)?.[TARGET] !== undefined;
 }
 
 const set: Set = (target, property, value, receiver) => {
@@ -36,6 +36,12 @@ const set: Set = (target, property, value, receiver) => {
   }
 
   if (!(property in Object.prototype) && property !== 'toJSON' && isTestId(value)) {
+    const parent = value[PARENT];
+
+    if (isTestId(parent)) {
+      parent[TARGET][value[PROPERTY] as string] = undefined;
+    }
+
     value[PARENT] = receiver;
     value[PROPERTY] = property;
 
@@ -101,9 +107,11 @@ const internalCreateTestId: InternalCreateTestId = (
     toJSON: internalToString,
     toString: internalToString,
     valueOf: internalToString,
-    [IS_TEST_ID]: true,
     [PREFIX]: prefix,
   };
+
+  target[TARGET as unknown as string] = target;
+
   let testId: AnyTestId;
 
   const handler: ProxyHandler<Target> = {
@@ -141,7 +149,7 @@ const internalCreateTestId: InternalCreateTestId = (
     set: internalSet,
   };
 
-  testId = new Proxy(target, handler);
+  testId = new Proxy(target, handler) as AnyTestId;
 
   return testId;
 };
@@ -173,7 +181,7 @@ export const createTestIdForProduction: CreateTestId = <T>(): TestId<T> => {
       undefined,
       () => productionTestId as AnyTestId,
       (target, property, value, receiver) =>
-        set(target, property, isTestId(value) ? productionTestId : undefined, receiver),
+        set(target, property, isTestId(value) ? productionTestId : value, receiver),
       () => '',
     );
   }

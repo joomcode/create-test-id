@@ -63,7 +63,7 @@ const runCommonTests = (createTestId: typeof createTestIdForDev) => {
     assert(error instanceof TypeError, 'testId cannot be made non-extensible');
   }
 
-  void createTestId();
+  createTestId();
 
   const articleTestIdWithoutSettingParent = createTestId<{header: typeof headerTestId}>();
 
@@ -142,11 +142,21 @@ const runCommonTests = (createTestId: typeof createTestIdForDev) => {
     'properties of Object.prototype cannot be setted on testId',
   );
 
-  // @ts-expect-error: no property toJSON on app testId
+  // @ts-expect-error: no property toJSON on testId
   appTestId.toJSON = articleTestId;
 
-  // @ts-expect-error: no property toJSON on app testId
+  // @ts-expect-error: no property toJSON on testId
   assert(typeof appTestId.toJSON === 'function', 'property "toJSON" cannot be setted on testId');
+
+  const symbol = Symbol();
+
+  // @ts-expect-error: no symbol property on testId
+  appTestId.main[symbol] = 3;
+
+  assert(symbol in appTestId.main, 'symbol property can be defined on testId');
+
+  // @ts-expect-error: no symbol property on testId
+  assert(appTestId.main[symbol] === 3, 'symbol property is setted with origin value on testId');
 };
 
 runCommonTests(createTestIdForDev);

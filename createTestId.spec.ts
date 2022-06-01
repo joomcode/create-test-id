@@ -71,3 +71,44 @@ assert(
   String(appTestId.main.foo) === 'app.main.foo',
   'configurable writable property gives correct testId string',
 );
+
+assert(
+  String(appTestId.main.header) === 'app.main.header',
+  'after moving the testId to another property, the original property has the correct string presentation',
+);
+
+appTestId.main.header;
+
+const fooTestId = createTestId<typeof headerTestId>();
+
+assert(appTestId.main.header === fooTestId, 'new testId is appended to the last getted testId');
+
+assert(
+  fooTestId.text.toString() === 'app.main.header.text',
+  'appended testId has correct string presentation',
+);
+
+appTestId.main.header;
+
+const firstTestId = createTestId<typeof headerTestId>();
+const secondsTestId = createTestId<typeof headerTestId>();
+
+assert(
+  String(firstTestId) === 'app.main.header',
+  'first created testId appended to last getted testId',
+);
+assert(String(secondsTestId) === '', 'second created testId did not append to last getted testId');
+
+appTestId.main;
+
+appTestId.main.header.toString();
+// @ts-expect-error: no property toJSON on testId
+appTestId.footer.toJSON();
+appTestId.main.header.text.valueOf();
+
+const barTestId = createTestId<typeof articleTestId>();
+
+assert(
+  appTestId.main === barTestId,
+  'testId with calls to toJSON, toString and valueOf are ignored when appending to last getted testId',
+);

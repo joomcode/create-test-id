@@ -24,28 +24,28 @@ labelTestId.otherInput = inputTestId;
 labelTestId.text = inputTestId;
 
 // @ts-expect-error
-void labelTestId.otherText;
+labelTestId.otherText;
 
 // @ts-expect-error
-void inputTestId.text;
+inputTestId.text;
 
 // @ts-expect-error
-void emptyTestId.text;
+emptyTestId.text;
 
-void createTestId('foo');
+createTestId('foo');
 
-void createTestId<{}>('foo');
-
-// @ts-expect-error
-void createTestId({});
+createTestId<{}>('foo');
 
 // @ts-expect-error
-void createTestId(3);
+createTestId({});
 
 // @ts-expect-error
-void createTestId(undefined);
+createTestId(3);
+
+// @ts-expect-error
+createTestId(undefined);
 
 export const userName: string = labelTestId.user.name;
 
 // @ts-expect-error
-void labelTestId.user.otherName;
+labelTestId.user.otherName;
