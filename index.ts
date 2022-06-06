@@ -20,9 +20,7 @@ type AnyTestId = {
  */
 type Set = (target: Target, property: string | symbol, value: unknown, receiver: AnyTestId) => true;
 
-export function isTestId(value: unknown): value is AnyTestId {
-  return (value as AnyTestId)?.[TARGET] !== undefined;
-}
+const internalIsTestId = isTestId as (value: unknown) => value is AnyTestId;
 
 const set: Set = (target, property, value, receiver) => {
   if (typeof property === 'symbol') {
@@ -31,7 +29,7 @@ const set: Set = (target, property, value, receiver) => {
     return true;
   }
 
-  if (!(property in Object.prototype) && property !== 'toJSON' && isTestId(value)) {
+  if (!(property in Object.prototype) && property !== 'toJSON' && internalIsTestId(value)) {
     const parent = value[PARENT];
 
     if (isTestId(parent)) {
@@ -124,7 +122,7 @@ const internalCreateTestId: InternalCreateTestId = (
 
       const value = target[property as string];
 
-      if (typeof property === 'string' && isTestId(value)) {
+      if (typeof property === 'string' && internalIsTestId(value)) {
         if (value[PARENT] !== lastGettedTestId) {
           previousLastGettedTestId = lastGettedTestId;
         }
@@ -155,6 +153,10 @@ export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> => {
 
   return internalCreateTestId(prefix) as TestId<T>;
 };
+
+export function isTestId(value: unknown): value is TestId<unknown> {
+  return (value as AnyTestId)?.[TARGET] !== undefined;
+}
 
 export const locator: Locator = (testId, properties) => {
   const testIdString = String(testId);

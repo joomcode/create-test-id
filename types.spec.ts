@@ -1,5 +1,11 @@
 import {createTestId} from './index';
 
+import type * as DevExports from './index';
+import type * as ProductionExports from './production';
+import type {Expect, IsEqual} from './types';
+
+declare const checks: [Expect<IsEqual<typeof DevExports, typeof ProductionExports>>];
+
 const inputTestId = createTestId<{}>();
 
 const emptyTestId = createTestId();

@@ -1,5 +1,8 @@
-import {createTestId as createTestIdForDev} from './index';
-import {createTestId as createTestIdForProduction} from './production';
+import {createTestId as createTestIdForDev, isTestId as isTestIdDev} from './index';
+import {
+  createTestId as createTestIdForProduction,
+  isTestId as isTestIdProduction,
+} from './production';
 
 export function assert(value: unknown, message: string): asserts value is true {
   if (value !== true) {
@@ -15,9 +18,10 @@ import './locator.spec';
 
 const runCommonTests = (
   createTestId: typeof createTestIdForDev,
+  isTestId: typeof isTestIdDev,
   environment: 'dev' | 'production',
 ) => {
-  console.log(`Run common tests for ${environment} createTestId`);
+  console.log(`Run common tests for ${environment} createTestId and isTestId`);
 
   assert(typeof createTestId === 'function', 'createTestId imports as a function');
 
@@ -163,9 +167,21 @@ const runCommonTests = (
 
   // @ts-expect-error: no symbol property on testId
   assert(appTestId.main[symbol] === 3, 'symbol property is setted with origin value on testId');
+
+  assert(isTestId(appTestId), 'isTestId works correctly for root testId');
+
+  assert(isTestId(appTestId.main), 'isTestId works correctly for child testId');
+
+  assert(isTestId(appTestId.main.toString) === false, 'isTestId works correctly in negative cases');
+
+  assert(isTestId(Object) === false, 'isTestId works correctly for non-testId objects');
+
+  assert(isTestId(null) === false, 'isTestId works correctly for null');
+
+  assert(isTestId(undefined) === false, 'isTestId works correctly for undefined');
 };
 
-runCommonTests(createTestIdForDev, 'dev');
-runCommonTests(createTestIdForProduction, 'production');
+runCommonTests(createTestIdForDev, isTestIdDev, 'dev');
+runCommonTests(createTestIdForProduction, isTestIdProduction, 'production');
 
 console.log('[Ok] All tests passed!');
