@@ -1,4 +1,5 @@
-import {createTestId as createTestIdForDev, createTestIdForProduction} from './index';
+import {createTestId as createTestIdForDev} from './index';
+import {createTestId as createTestIdForProduction} from './production';
 
 export function assert(value: unknown, message: string): asserts value is true {
   if (value !== true) {
@@ -9,10 +10,14 @@ export function assert(value: unknown, message: string): asserts value is true {
 }
 
 import './createTestId.spec';
-import './createTestIdForProduction.spec';
+import './production.spec';
+import './locator.spec';
 
-const runCommonTests = (createTestId: typeof createTestIdForDev) => {
-  console.log(`Run common tests for "${createTestId.name}"`);
+const runCommonTests = (
+  createTestId: typeof createTestIdForDev,
+  environment: 'dev' | 'production',
+) => {
+  console.log(`Run common tests for ${environment} createTestId`);
 
   assert(typeof createTestId === 'function', 'createTestId imports as a function');
 
@@ -63,6 +68,7 @@ const runCommonTests = (createTestId: typeof createTestIdForDev) => {
     assert(error instanceof TypeError, 'testId cannot be made non-extensible');
   }
 
+  createTestId();
   createTestId();
 
   const articleTestIdWithoutSettingParent = createTestId<{header: typeof headerTestId}>();
@@ -159,7 +165,7 @@ const runCommonTests = (createTestId: typeof createTestIdForDev) => {
   assert(appTestId.main[symbol] === 3, 'symbol property is setted with origin value on testId');
 };
 
-runCommonTests(createTestIdForDev);
-runCommonTests(createTestIdForProduction);
+runCommonTests(createTestIdForDev, 'dev');
+runCommonTests(createTestIdForProduction, 'production');
 
 console.log('[Ok] All tests passed!');

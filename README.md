@@ -54,11 +54,13 @@ export const appTestId = createTestId<{label: typeof labelTestId; header: unknow
 appTestId.label = labelTestId;
 ```
 
-For production you can use `createTestIdForProduction`. This function has the same API as `createTestId`,
+For production you can import `createTestId` from `create-test-id/production`.
+This function has the same API as dev `createTestId`,
 but does not create new objects, and its `testId` is always equal to the empty string.
 
 ```tsx
-import {createTestId as createTestIdForDev, createTestIdForProduction} from 'create-test-id';
+import {createTestId as createTestIdForDev} from 'create-test-id';
+import {createTestId as createTestIdForProduction} from 'create-test-id/production';
 
 export const createTestId = __IS_PRODUCTION__ ? createTestIdForProduction : createTestIdForDev;
 ```

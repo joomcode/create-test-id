@@ -2,7 +2,10 @@
   "name": "create-test-id",
   "version": "0.0.5",
   "description": "Creates typed testId for autotests",
-  "exports": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./production": "./production.js"
+  },
   "scripts": {
     "prettier": "prettier --write .",
     "prebuild": "rm --force *.js *.d.ts",
@@ -30,6 +33,8 @@
   "files": [
     "index.js",
     "index.d.ts",
+    "production.js",
+    "production.d.ts",
     "types.d.ts"
   ],
   "homepage": "https://github.com/uid11/create-test-id#readme",

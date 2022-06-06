@@ -1,4 +1,4 @@
-import type {CreateTestId, Exports, TestId, Target} from './types';
+import type {CreateTestId, Locator, TestId, Target} from './types';
 
 export type {TestId};
 
@@ -7,10 +7,6 @@ const PREFIX = Symbol('PREFIX');
 const PROPERTY = Symbol('PROPERTY');
 const TARGET = Symbol('TARGET');
 
-/**
- * Any TestId.
- * @internal
- */
 type AnyTestId = {
   [PARENT]?: AnyTestId;
   [PREFIX]?: string;
@@ -24,7 +20,7 @@ type AnyTestId = {
  */
 type Set = (target: Target, property: string | symbol, value: unknown, receiver: AnyTestId) => true;
 
-function isTestId(value: unknown): value is AnyTestId {
+export function isTestId(value: unknown): value is AnyTestId {
   return (value as AnyTestId)?.[TARGET] !== undefined;
 }
 
@@ -58,13 +54,6 @@ const toString = function (this: AnyTestId): string {
   const properties: string[] = [];
   let parent: AnyTestId | undefined;
   let testId = this;
-
-  if (testId === lastGettedTestId) {
-    lastGettedTestId = previousLastGettedTestId;
-    previousLastGettedTestId = undefined;
-  } else if (testId === previousLastGettedTestId) {
-    previousLastGettedTestId = undefined;
-  }
 
   while ((parent = testId[PARENT])) {
     properties.unshift(testId[PROPERTY] as string);
@@ -154,14 +143,11 @@ const internalCreateTestId: InternalCreateTestId = (
   return testId;
 };
 
-/**
- * Creates testId by typed shape.
- */
 export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> => {
   if (prefix === undefined && lastGettedTestId !== undefined) {
     const testId = lastGettedTestId as TestId<T>;
 
-    lastGettedTestId = undefined;
+    lastGettedTestId = previousLastGettedTestId;
     previousLastGettedTestId = undefined;
 
     return testId;
@@ -170,31 +156,29 @@ export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> => {
   return internalCreateTestId(prefix) as TestId<T>;
 };
 
-let productionTestId: AnyTestId | undefined;
+export const locator: Locator = (testId, properties) => {
+  const testIdString = String(testId);
 
-/**
- * createTestid for production (does not create new objects and always returns an empty string).
- */
-export const createTestIdForProduction: CreateTestId = <T>(): TestId<T> => {
-  if (productionTestId === undefined) {
-    productionTestId = internalCreateTestId(
-      undefined,
-      () => productionTestId as AnyTestId,
-      (target, property, value, receiver) =>
-        set(target, property, isTestId(value) ? productionTestId : value, receiver),
-      () => '',
-    );
+  if (testIdString === '') {
+    return;
   }
 
-  return productionTestId as TestId<T>;
+  const result: Record<string, string | undefined> = {'data-testid': testIdString};
+
+  if (properties) {
+    for (const key of Object.keys(properties)) {
+      result[`data-test-${key}`] = properties[key];
+    }
+  }
+
+  return result as ReturnType<Locator>;
 };
 
 export default createTestId;
 
-declare const module: {exports: Exports};
+declare const exports: object;
+declare const module: {exports: CreateTestId};
 
 module.exports = createTestId;
-module.exports.createTestId = createTestId;
-module.exports.createTestIdForProduction = createTestIdForProduction;
-module.exports.default = createTestId;
+Object.assign(module.exports, exports);
 Object.defineProperty(module.exports, '__esModule', {value: true});

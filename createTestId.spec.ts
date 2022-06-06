@@ -1,7 +1,7 @@
 import {createTestId, default as defaultCreateTestId} from './index';
 import {assert} from './index.spec';
 
-console.log(`Run custom tests for "${createTestId.name}"`);
+console.log('Run custom tests for dev createTestId');
 
 assert(
   createTestId === defaultCreateTestId,
@@ -10,7 +10,10 @@ assert(
 
 const appTestId = createTestId<{main: typeof articleTestId; footer: unknown}>('app');
 const headerTestId = createTestId<{text: unknown}>();
-const articleTestId = createTestId<{header: typeof headerTestId}>();
+const articleTestId = createTestId<{
+  header: typeof headerTestId;
+  secondHeader: typeof headerTestId;
+}>();
 
 articleTestId.header = headerTestId;
 appTestId.main = articleTestId;
@@ -88,6 +91,7 @@ assert(
   'appended testId has correct string presentation',
 );
 
+appTestId.main.secondHeader;
 appTestId.main.header;
 
 const firstTestId = createTestId<typeof headerTestId>();
@@ -95,20 +99,28 @@ const secondsTestId = createTestId<typeof headerTestId>();
 
 assert(
   String(firstTestId) === 'app.main.header',
-  'first created testId appended to last getted testId',
+  'first created testId is appended to last getted testId',
 );
-assert(String(secondsTestId) === '', 'second created testId did not append to last getted testId');
+assert(
+  String(secondsTestId) === 'app.main.secondHeader',
+  'second created testId is appended to previous getted testId',
+);
 
-appTestId.main;
-
+appTestId.main.secondHeader;
 appTestId.main.header.toString();
-// @ts-expect-error: no property toJSON on testId
-appTestId.footer.toJSON();
-appTestId.main.header.text.valueOf();
 
-const barTestId = createTestId<typeof articleTestId>();
+const barTestId = createTestId<typeof headerTestId>();
 
 assert(
-  appTestId.main === barTestId,
-  'testId with calls to toJSON, toString and valueOf are ignored when appending to last getted testId',
+  appTestId.main.header === barTestId,
+  'testId with calls to toString are not ignored when appending to last getted testId',
+);
+
+appTestId.main.header;
+
+const rootTestId = createTestId<typeof headerTestId>('root');
+
+assert(
+  String(rootTestId) === 'root',
+  'root testId (with prefix) did not append to last getted testId',
 );

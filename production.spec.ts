@@ -1,10 +1,8 @@
-import {
-  createTestId as createTestIdForDev,
-  createTestIdForProduction as createTestId,
-} from './index';
+import {createTestId as createTestIdForDev} from './index';
 import {assert} from './index.spec';
+import {createTestId} from './production';
 
-console.log(`Run custom tests for "${createTestId.name}"`);
+console.log('Run custom tests for production createTestId');
 
 const appTestId = createTestId<{main: typeof articleTestId}>('app');
 const headerTestId = createTestId<{text: unknown}>();
@@ -24,7 +22,7 @@ assert(
 
 assert(
   appTestId.main.header.text.toString() === '',
-  'createTestIdForProduction turns all testId into empty strings',
+  'production createTestId turns all testId into empty strings',
 );
 
 assert(
@@ -42,7 +40,7 @@ assert(
 assert(
   // @ts-expect-error: different testId have different types
   appTestId.main === appTestId.main.header.text,
-  'createTestIdForProduction returns one proxy object for all properties',
+  'production createTestId returns one proxy object for all properties',
 );
 
 assert(
@@ -65,8 +63,8 @@ Object.defineProperty(appTestId.main, 'bar', {
 });
 
 assert(
-  'bar' in appTestId.main,
-  'configurable writable property with dev testId as value creates testId on production testId',
+  !('bar' in appTestId.main),
+  'configurable writable property with dev testId as value does not create testId on production testId',
 );
 
 assert(

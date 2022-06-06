@@ -8,6 +8,14 @@ export type IsEqual<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T ex
   : false;
 
 /**
+ * The function makes a copy of the object, converting the object's properties into data-test-attributes.
+ */
+export type Locator = (
+  testId: TestId<{}>,
+  properties?: Record<string, string | undefined>,
+) => Record<string, string> | undefined;
+
+/**
  * Generate TestId by shape.
  */
 export type TestId<T> = {
@@ -18,16 +26,6 @@ export type TestId<T> = {
  * Creates testId as string from path in typed components tree.
  */
 export type CreateTestId = (<T = {}>() => TestId<T>) & (<T = {}>(prefix: string) => TestId<T>);
-
-/**
- * Package exports.
- * @internal
- */
-export type Exports = CreateTestId & {
-  default?: CreateTestId;
-  createTestId?: CreateTestId;
-  createTestIdForProduction?: CreateTestId;
-};
 
 /**
  * Proxy target.
