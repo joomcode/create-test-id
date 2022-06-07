@@ -1,8 +1,8 @@
-import {createTestId as createTestIdForDev, isTestId as isTestIdDev} from './index';
+import {createTestId as createTestIdForDev, isTestId as isTestIdDev} from '../index';
 import {
   createTestId as createTestIdForProduction,
   isTestId as isTestIdProduction,
-} from './production';
+} from '../production';
 
 export function assert(value: unknown, message: string): asserts value is true {
   if (value !== true) {

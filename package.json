@@ -8,9 +8,9 @@
   },
   "scripts": {
     "prettier": "prettier --write .",
-    "prebuild": "rm --force *.js *.d.ts",
+    "prebuild": "rm --force *.js *.d.ts ./spec/*.js ./spec/*.d.ts",
     "build": "tsc",
-    "test": "npm run build && npm run prettier && node index.spec.js",
+    "test": "npm run build && npm run prettier && node ./spec/index.spec.js",
     "prepublishOnly": "npm test"
   },
   "keywords": [

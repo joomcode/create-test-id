@@ -1,7 +1,7 @@
-import {createTestId, locator} from './index';
+import {createTestId, locator} from '../index';
 import {assert} from './index.spec';
 
-import type {TestId} from './types';
+import type {TestId} from '../types';
 
 console.log('Run tests for "locator"');
 

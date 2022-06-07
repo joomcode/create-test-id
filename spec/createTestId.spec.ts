@@ -1,4 +1,4 @@
-import {createTestId, default as defaultCreateTestId} from './index';
+import {createTestId, default as defaultCreateTestId} from '../index';
 import {assert} from './index.spec';
 
 console.log('Run custom tests for dev createTestId');

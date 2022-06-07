@@ -25,13 +25,13 @@
     "types": []
   },
   "files": [
-    "createTestId.spec.ts",
     "index.ts",
-    "index.spec.ts",
-    "locator.spec.tsx",
     "production.ts",
-    "production.spec.ts",
     "types.ts",
-    "types.spec.ts"
+    "spec/createTestId.spec.ts",
+    "spec/index.spec.ts",
+    "spec/locator.spec.tsx",
+    "spec/production.spec.ts",
+    "spec/types.spec.ts"
   ]
 }

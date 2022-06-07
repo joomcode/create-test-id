@@ -1,6 +1,6 @@
-import {createTestId as createTestIdForDev} from './index';
+import {createTestId as createTestIdForDev} from '../index';
+import {createTestId} from '../production';
 import {assert} from './index.spec';
-import {createTestId} from './production';
 
 console.log('Run custom tests for production createTestId');
 
