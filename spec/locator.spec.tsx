@@ -55,16 +55,15 @@ assert(
 
 type LabelTestId = TestId<{}>;
 
-const Label = ({text}: {text: string}) => {
+const Label = ({level, text}: {level?: string; text: string}) => {
   const testId = createTestId<LabelTestId>();
 
-  return <span {...locator(testId)}>{text}</span>;
+  return <span {...locator(testId, {level})}>{text}</span>;
 };
 
 type HeaderTestId = TestId<{
   foo: LabelTestId;
   bar: LabelTestId;
-  baz: unknown;
 }>;
 
 const Header = () => {
@@ -81,35 +80,50 @@ const Header = () => {
 
 type MainTestId = TestId<{
   header: HeaderTestId;
+  rendered: RenderedTestId;
   text: unknown;
 }>;
 
-const Main = () => {
+const Main = ({render}: {render: Function}) => {
   const testId = createTestId<MainTestId>();
+
+  testId.rendered;
+  const rendered = render();
 
   return (
     <main {...locator(testId)}>
       <Header {...locator(testId.header)} />
       Some main text
+      {rendered}
     </main>
   );
 };
 
 type AppTestId = TestId<{
   header: HeaderTestId;
-  main: MainTestId;
   label: LabelTestId;
+  main: MainTestId;
+}>;
+
+type RenderedTestId = TestId<{
+  header: HeaderTestId;
 }>;
 
 const App = () => {
   const testId = createTestId<AppTestId>('app');
 
+  const render = () => {
+    const renderedTestId = createTestId<RenderedTestId>();
+
+    return <Header {...locator(renderedTestId.header)} />;
+  };
+
   return (
     <div {...locator(testId)}>
       Hello👋 world!
       <Header {...locator(testId.header)} />
-      <Main {...locator(testId.main)} />
-      <Label text="baz" {...locator(testId.label)} />
+      <Main render={render} {...locator(testId.main)} />
+      <Label level="1" text="baz" {...locator(testId.label)} />
     </div>
   );
 };
@@ -131,8 +145,15 @@ const expectedApp = (
         <span data-testid="app.main.header.bar">bar</span>
       </h1>
       Some main text
+      <h1 data-testid="app.main.rendered.header">
+        Header
+        <span data-testid="app.main.rendered.header.foo">foo</span>
+        <span data-testid="app.main.rendered.header.bar">bar</span>
+      </h1>
     </main>
-    <span data-testid="app.label">baz</span>
+    <span data-testid="app.label" data-test-level="1">
+      baz
+    </span>
   </div>
 );
 

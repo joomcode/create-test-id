@@ -49,7 +49,7 @@ In TypeScript module `App.tsx` with root component `App`:
 ```tsx
 import {labelTestId} from 'components/Label';
 
-export const appTestId = createTestId<{label: typeof labelTestId; header: unknown}>('fooWebApp');
+export const appTestId = createTestId<{header: unknown; label: typeof labelTestId}>('fooWebApp');
 
 appTestId.label = labelTestId;
 ```
