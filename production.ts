@@ -1,7 +1,5 @@
 import type {CreateTestId, Locator, TestId, Target} from './types';
 
-export type {TestId};
-
 let testId: TestId<unknown> | undefined;
 
 const set = (target: Target, property: string | symbol, value: unknown) => {
@@ -51,6 +49,8 @@ export function isTestId(value: unknown): value is TestId<unknown> {
 }
 
 export const locator: Locator = () => undefined;
+
+export type {TestId};
 
 export default createTestId;
 

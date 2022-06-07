@@ -1,7 +1,5 @@
 import type {CreateTestId, Locator, TestId, Target} from './types';
 
-export type {TestId};
-
 const PARENT = Symbol('PARENT');
 const PREFIX = Symbol('PREFIX');
 const PROPERTY = Symbol('PROPERTY');
@@ -14,15 +12,9 @@ type AnyTestId = {
   [TARGET]: Target;
 } & TestId<unknown>;
 
-/**
- * TestId proxy set-trap handler.
- * @internal
- */
-type Set = (target: Target, property: string | symbol, value: unknown, receiver: AnyTestId) => true;
-
 const internalIsTestId = isTestId as (value: unknown) => value is AnyTestId;
 
-const set: Set = (target, property, value, receiver) => {
+const set: ProxyHandler<Target>['set'] = (target, property, value, receiver) => {
   if (typeof property === 'symbol') {
     target[property as unknown as string] = value;
 
@@ -46,7 +38,30 @@ const set: Set = (target, property, value, receiver) => {
 };
 
 let lastGettedTestId: AnyTestId | undefined;
-let previousLastGettedTestId: AnyTestId | undefined;
+
+const handler: ProxyHandler<Target> = {
+  deleteProperty: () => true,
+  get(target, property, receiver) {
+    if (typeof property === 'string' && !target[property]) {
+      const testIdInGetter = internalCreateTestId();
+
+      testIdInGetter[PARENT] = receiver;
+      testIdInGetter[PROPERTY] = property;
+
+      target[property] = testIdInGetter;
+    }
+
+    const value = target[property as string];
+
+    if (typeof property === 'string' && internalIsTestId(value)) {
+      lastGettedTestId = value;
+    }
+
+    return value;
+  },
+  preventExtensions: () => false,
+  set,
+};
 
 const toString = function (this: AnyTestId): string {
   const properties: string[] = [];
@@ -70,73 +85,26 @@ const toString = function (this: AnyTestId): string {
   return properties.join('.');
 };
 
-const deleteProperty = () => true;
-const preventExtensions = () => false;
-
-/**
- * Create new testId (dev or production).
- * @internal
- */
-type InternalCreateTestId = (
-  prefix?: string,
-  getTestIdInGetter?: () => AnyTestId,
-  internalSet?: Set,
-  internalToString?: () => string,
-) => AnyTestId;
-
-const internalCreateTestId: InternalCreateTestId = (
-  prefix,
-  getTestIdInGetter = internalCreateTestId,
-  internalSet = set,
-  internalToString = toString,
-) => {
+const internalCreateTestId = (prefix?: string) => {
   const target: Target = {
-    toJSON: internalToString,
-    toString: internalToString,
-    valueOf: internalToString,
+    toJSON: toString,
+    toString,
+    valueOf: toString,
     [PREFIX]: prefix,
   };
 
   target[TARGET as unknown as string] = target;
 
-  let testId: AnyTestId;
-
-  const handler: ProxyHandler<Target> = {
+  const testId = new Proxy(target, {
     defineProperty(target, property, descriptor) {
       if (descriptor.configurable !== true || descriptor.writable !== true) {
         return false;
       }
 
-      return internalSet(target, property, descriptor.value, testId);
+      return set(target, property, descriptor.value, testId);
     },
-    deleteProperty,
-    get(target, property, receiver) {
-      if (typeof property === 'string' && !target[property]) {
-        const testIdInGetter = getTestIdInGetter();
-
-        testIdInGetter[PARENT] = receiver;
-        testIdInGetter[PROPERTY] = property;
-
-        target[property] = testIdInGetter;
-      }
-
-      const value = target[property as string];
-
-      if (typeof property === 'string' && internalIsTestId(value)) {
-        if (value[PARENT] !== lastGettedTestId) {
-          previousLastGettedTestId = lastGettedTestId;
-        }
-
-        lastGettedTestId = value;
-      }
-
-      return value;
-    },
-    preventExtensions,
-    set: internalSet,
-  };
-
-  testId = new Proxy(target, handler) as AnyTestId;
+    ...handler,
+  }) as AnyTestId;
 
   return testId;
 };
@@ -145,8 +113,7 @@ export const createTestId: CreateTestId = <T>(prefix?: string): TestId<T> => {
   if (prefix === undefined && lastGettedTestId !== undefined) {
     const testId = lastGettedTestId as TestId<T>;
 
-    lastGettedTestId = previousLastGettedTestId;
-    previousLastGettedTestId = undefined;
+    lastGettedTestId = undefined;
 
     return testId;
   }
@@ -175,6 +142,8 @@ export const locator: Locator = (testId, properties) => {
 
   return result as ReturnType<Locator>;
 };
+
+export type {TestId};
 
 export default createTestId;
 

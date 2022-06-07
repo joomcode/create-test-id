@@ -1,4 +1,5 @@
 import {createTestId, default as defaultCreateTestId} from '../index';
+import {createTestId as createTestIdForProduction} from '../production';
 import {assert} from './index.spec';
 
 console.log('Run custom tests for dev createTestId');
@@ -10,10 +11,7 @@ assert(
 
 const appTestId = createTestId<{main: typeof articleTestId; footer: unknown}>('app');
 const headerTestId = createTestId<{text: unknown}>();
-const articleTestId = createTestId<{
-  header: typeof headerTestId;
-  secondHeader: typeof headerTestId;
-}>();
+const articleTestId = createTestId<{header: typeof headerTestId}>();
 
 articleTestId.header = headerTestId;
 appTestId.main = articleTestId;
@@ -91,22 +89,6 @@ assert(
   'appended testId has correct string presentation',
 );
 
-appTestId.main.secondHeader;
-appTestId.main.header;
-
-const firstTestId = createTestId<typeof headerTestId>();
-const secondsTestId = createTestId<typeof headerTestId>();
-
-assert(
-  String(firstTestId) === 'app.main.header',
-  'first created testId is appended to last getted testId',
-);
-assert(
-  String(secondsTestId) === 'app.main.secondHeader',
-  'second created testId is appended to previous getted testId',
-);
-
-appTestId.main.secondHeader;
 appTestId.main.header.toString();
 
 const barTestId = createTestId<typeof headerTestId>();
@@ -123,4 +105,13 @@ const rootTestId = createTestId<typeof headerTestId>('root');
 assert(
   String(rootTestId) === 'root',
   'root testId (with prefix) did not append to last getted testId',
+);
+
+appTestId.main.header;
+
+const productionTestId = createTestIdForProduction<typeof headerTestId>();
+
+assert(
+  appTestId.main.header !== productionTestId,
+  'new production testId is not appended to the last getted dev testId',
 );

@@ -73,7 +73,6 @@ const runCommonTests = (
   }
 
   createTestId();
-  createTestId();
 
   const articleTestIdWithoutSettingParent = createTestId<{header: typeof headerTestId}>();
 
