@@ -7,6 +7,8 @@
 [![Conventional Commits][conventional-commits-image]][conventional-commits-url]
 [![License MIT][license-image]][license-url]
 
+The package is deprecated. Use the https://www.npmjs.com/package/create-locator package instead.
+
 Creates typed testId for autotests.
 
 ## Install
